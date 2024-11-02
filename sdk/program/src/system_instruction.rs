@@ -136,6 +136,13 @@ pub enum SystemInstruction {
     ///   1. `[WRITE]` Recipient account
     Transfer { lamports: u64 },
 
+    /// Mint lamports
+    ///
+    /// # Account references
+    ///   0. `[WRITE, SIGNER]` Funding account
+    ///   1. `[WRITE]` Recipient account
+    Mint { lamports: u64},
+
     /// Create a new account at an address derived from a base pubkey and a seed
     ///
     /// # Account references

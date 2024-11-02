@@ -241,6 +241,32 @@ fn transfer(
     )
 }
 
+fn mint(
+    from_account_index: IndexOfAccount,
+    to_account_index: IndexOfAccount,
+    lamports: u64,
+    invoke_context: &InvokeContext,
+    transaction_context: &TransactionContext,
+    instruction_context: &InstructionContext,
+) -> Result<(), InstructionError> {
+    if !instruction_context.is_instruction_account_signer(from_account_index)? {
+        ic_msg!(
+            invoke_context,
+            "Transfer: `from` account {} must sign",
+            transaction_context.get_key_of_account_at_index(
+                instruction_context
+                    .get_index_of_instruction_account_in_transaction(from_account_index)?,
+            )?,
+        );
+        return Err(InstructionError::MissingRequiredSignature);
+    }
+
+    let mut to = instruction_context
+        .try_borrow_instruction_account(transaction_context, to_account_index)?;
+    to.checked_add_lamports(lamports)?;
+    Ok(())
+}
+
 fn transfer_with_seed(
     from_account_index: IndexOfAccount,
     from_base_account_index: IndexOfAccount,
@@ -377,6 +403,17 @@ declare_process_instruction!(Entrypoint, DEFAULT_COMPUTE_UNITS, |invoke_context|
         SystemInstruction::Transfer { lamports } => {
             instruction_context.check_number_of_instruction_accounts(2)?;
             transfer(
+                0,
+                1,
+                lamports,
+                invoke_context,
+                transaction_context,
+                instruction_context,
+            )
+        }
+        SystemInstruction::Mint { lamports } => {
+            instruction_context.check_number_of_instruction_accounts(2)?;
+            mint(
                 0,
                 1,
                 lamports,
