@@ -1,7 +1,5 @@
 use {
-    crate::bank::Bank,
-    crossbeam_channel::{unbounded, Receiver, Sender},
-    solana_sdk::{
+    crate::bank::Bank, crossbeam_channel::{unbounded, Receiver, Sender}, log::info, solana_sdk::{
         account::Account,
         client::{AsyncClient, Client, SyncClient},
         commitment_config::CommitmentConfig,
@@ -17,14 +15,13 @@ use {
         sysvar::{Sysvar, SysvarId},
         transaction::{self, Transaction, VersionedTransaction},
         transport::{Result, TransportError},
-    },
-    std::{
+    }, std::{
         convert::TryFrom,
         io,
         sync::{Arc, Mutex},
         thread::{sleep, Builder},
         time::{Duration, Instant},
-    },
+    }
 };
 #[cfg(feature = "dev-context-only-utils")]
 use {crate::bank_forks::BankForks, solana_sdk::clock, std::sync::RwLock};
@@ -81,6 +78,7 @@ impl SyncClient for BankClient {
         keypair: &Keypair,
         pubkey: &Pubkey,
     ) -> Result<Signature> {
+        info!("dddd: transfer_and_confirm");
         let transfer_instruction =
             system_instruction::transfer(&keypair.pubkey(), pubkey, lamports);
         self.send_and_confirm_instruction(keypair, transfer_instruction)

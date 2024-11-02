@@ -942,6 +942,7 @@ impl RpcClient {
         transaction: &impl SerializableTransaction,
         config: RpcSendTransactionConfig,
     ) -> ClientResult<Signature> {
+        info!("client dddd: send_transaction_with_config");
         let encoding = if let Some(encoding) = config.encoding {
             encoding
         } else {

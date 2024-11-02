@@ -6,10 +6,7 @@ use {
         log_collector::LogCollector,
         sysvar_cache::SysvarCache,
         timings::{ExecuteDetailsTimings, ExecuteTimings},
-    },
-    serde::{Deserialize, Serialize},
-    solana_measure::measure::Measure,
-    solana_sdk::{
+    }, log::info, serde::{Deserialize, Serialize}, solana_measure::measure::Measure, solana_sdk::{
         account::WritableAccount,
         feature_set::FeatureSet,
         hash::Hash,
@@ -19,8 +16,7 @@ use {
         sysvar::instructions,
         transaction::TransactionError,
         transaction_context::{IndexOfAccount, InstructionAccount, TransactionContext},
-    },
-    std::{cell::RefCell, rc::Rc, sync::Arc},
+    }, std::{cell::RefCell, rc::Rc, sync::Arc}
 };
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
@@ -133,6 +129,7 @@ impl MessageProcessor {
                         invoke_context.transaction_context.pop()
                     })
             } else {
+                info!("dddd: process_message");
                 let mut time = Measure::start("execute_instruction");
                 let mut compute_units_consumed = 0;
                 let result = invoke_context.process_instruction(

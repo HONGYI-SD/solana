@@ -9,16 +9,13 @@ use {
         stable_log,
         sysvar_cache::SysvarCache,
         timings::{ExecuteDetailsTimings, ExecuteTimings},
-    },
-    solana_measure::measure::Measure,
-    solana_rbpf::{
+    }, log::info, solana_measure::measure::Measure, solana_rbpf::{
         ebpf::MM_HEAP_START,
         error::{EbpfError, ProgramResult},
         memory_region::MemoryMapping,
         program::{BuiltinFunction, SBPFVersion},
         vm::{Config, ContextObject, EbpfVm},
-    },
-    solana_sdk::{
+    }, solana_sdk::{
         account::{create_account_shared_data_for_test, AccountSharedData},
         bpf_loader_deprecated,
         clock::Slot,
@@ -34,14 +31,13 @@ use {
         transaction_context::{
             IndexOfAccount, InstructionAccount, TransactionAccount, TransactionContext,
         },
-    },
-    std::{
+    }, std::{
         alloc::Layout,
         cell::RefCell,
         fmt::{self, Debug},
         rc::Rc,
         sync::{atomic::Ordering, Arc},
-    },
+    }
 };
 
 pub type BuiltinFunctionWithContext = BuiltinFunction<InvokeContext<'static>>;
@@ -278,6 +274,7 @@ impl<'a> InvokeContext<'a> {
         if let Some(Some(syscall_context)) = self.syscall_context.pop() {
             self.traces.push(syscall_context.trace_log);
         }
+        info!("dddd: pop 277");
         self.transaction_context.pop()
     }
 
@@ -456,6 +453,7 @@ impl<'a> InvokeContext<'a> {
         compute_units_consumed: &mut u64,
         timings: &mut ExecuteTimings,
     ) -> Result<(), InstructionError> {
+        info!("dddd: process_executable_chain");
         let instruction_context = self.transaction_context.get_current_instruction_context()?;
         let mut process_executable_chain_time = Measure::start("process_executable_chain_time");
 
@@ -510,7 +508,9 @@ impl<'a> InvokeContext<'a> {
             empty_memory_mapping,
             0,
         );
+        info!("dddd: before invoke_func");
         vm.invoke_function(function);
+        info!("dddd: after invoke_func");
         let result = match vm.program_result {
             ProgramResult::Ok(_) => {
                 stable_log::program_success(&logger, &program_id);
@@ -866,6 +866,7 @@ mod tests {
                             .unwrap()
                             .configure(&[3], &instruction_accounts, &[]);
                         let result = invoke_context.push();
+                        info!("dddd: InstructionError::UnbalancedInstruction 869");
                         assert_eq!(result, Err(InstructionError::UnbalancedInstruction));
                         result?;
                         invoke_context

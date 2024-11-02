@@ -1,3 +1,5 @@
+use spl_token::solana_program::info;
+
 use {
     crate::{
         args::{
@@ -443,6 +445,7 @@ fn send_messages(
                     skip_preflight: true,
                     ..RpcSendTransactionConfig::default()
                 };
+                info!("client dddd: send_messages");
                 client.send_transaction_with_config(&transaction, config)?;
                 Ok((transaction, last_valid_block_height))
             }

@@ -3620,6 +3620,7 @@ pub mod rpc_full {
             data: String,
             config: Option<RpcSendTransactionConfig>,
         ) -> Result<String> {
+            info!("dddd: send_transaction");
             debug!("send_transaction rpc request received");
             let RpcSendTransactionConfig {
                 skip_preflight,

@@ -9,6 +9,8 @@
 
 #![cfg(feature = "full")]
 
+use logger::info;
+
 use crate::{
     account::Account,
     clock::Slot,
@@ -234,6 +236,7 @@ pub trait AsyncClient {
         pubkey: &Pubkey,
         recent_blockhash: Hash,
     ) -> Result<Signature> {
+        info!("dddd: async_transfer");
         let transfer_instruction =
             system_instruction::transfer(&keypair.pubkey(), pubkey, lamports);
         self.async_send_instruction(keypair, transfer_instruction, recent_blockhash)

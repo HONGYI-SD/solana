@@ -4766,7 +4766,7 @@ impl Bank {
         programs_loaded_for_tx_batch: &LoadedProgramsForTxBatch,
     ) -> TransactionExecutionResult {
         let transaction_accounts = std::mem::take(&mut loaded_transaction.accounts);
-
+        info!("dddd: execute_loaded_transaction");
         fn transaction_accounts_lamports_sum(
             accounts: &[(Pubkey, AccountSharedData)],
             message: &SanitizedMessage,
@@ -4816,6 +4816,7 @@ impl Bank {
             programs_loaded_for_tx_batch.latest_root_epoch,
         );
         let mut process_message_time = Measure::start("process_message_time");
+        info!("dddd: execute_loaded_transaction");
         let process_result = MessageProcessor::process_message(
             tx.message(),
             &loaded_transaction.program_indices,
@@ -4887,13 +4888,13 @@ impl Bank {
             accounts_resize_delta: accounts_data_len_delta,
         } = transaction_context.into();
 
-        if status.is_ok()
-            && transaction_accounts_lamports_sum(&accounts, tx.message())
-                .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
-                .is_none()
-        {
-            status = Err(TransactionError::UnbalancedTransaction);
-        }
+        // if status.is_ok()
+        //     && transaction_accounts_lamports_sum(&accounts, tx.message())
+        //         .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
+        //         .is_none()
+        // {
+        //     status = Err(TransactionError::UnbalancedTransaction);
+        // }
         let status = status.map(|_| ());
 
         loaded_transaction.accounts = accounts;

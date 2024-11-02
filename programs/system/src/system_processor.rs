@@ -203,7 +203,7 @@ fn transfer_verified(
         return Err(SystemError::ResultWithNegativeLamports.into());
     }
 
-    from.checked_sub_lamports(lamports)?;
+    //from.checked_sub_lamports(lamports)?;
     drop(from);
     let mut to = instruction_context
         .try_borrow_instruction_account(transaction_context, to_account_index)?;

@@ -930,7 +930,7 @@ pub fn process_transfer(
             .with_memo(memo)
             .with_compute_unit_price(compute_unit_price)
         } else {
-            vec![system_instruction::transfer(&from_pubkey, to, lamports)]
+            vec![system_instruction::transfer(&from_pubkey, to, lamports)] //TODO: add more mint type
                 .with_memo(memo)
                 .with_compute_unit_price(compute_unit_price)
         };

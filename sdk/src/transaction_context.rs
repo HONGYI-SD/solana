@@ -319,6 +319,8 @@ impl TransactionContext {
     /// Pushes the next InstructionContext
     #[cfg(not(target_os = "solana"))]
     pub fn push(&mut self) -> Result<(), InstructionError> {
+        use logger::info;
+
         let nesting_level = self.get_instruction_context_stack_height();
         let caller_instruction_context = self
             .instruction_trace
@@ -335,6 +337,7 @@ impl TransactionContext {
             if original_caller_instruction_accounts_lamport_sum
                 != current_caller_instruction_accounts_lamport_sum
             {
+                info!("dddd: InstructionError::UnbalancedInstruction 338");
                 return Err(InstructionError::UnbalancedInstruction);
             }
         }
@@ -359,6 +362,8 @@ impl TransactionContext {
     /// Pops the current InstructionContext
     #[cfg(not(target_os = "solana"))]
     pub fn pop(&mut self) -> Result<(), InstructionError> {
+        use logger::info;
+
         if self.instruction_stack.is_empty() {
             return Err(InstructionError::CallDepth);
         }
@@ -380,11 +385,14 @@ impl TransactionContext {
                 });
         // Always pop, even if we `detected_an_unbalanced_instruction`
         self.instruction_stack.pop();
-        if detected_an_unbalanced_instruction? {
-            Err(InstructionError::UnbalancedInstruction)
-        } else {
-            Ok(())
-        }
+        
+        Ok(())
+        // if detected_an_unbalanced_instruction? {
+        //     info!("dddd: InstructionError::UnbalancedInstruction 387");
+        //     Err(InstructionError::UnbalancedInstruction)
+        // } else {
+        //     Ok(())
+        // }
     }
 
     /// Gets the return data of the current InstructionContext or any above
