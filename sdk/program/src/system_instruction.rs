@@ -897,6 +897,18 @@ pub fn transfer(from_pubkey: &Pubkey, to_pubkey: &Pubkey, lamports: u64) -> Inst
     )
 }
 
+pub fn mint(from_pubkey: &Pubkey, to_pubkey: &Pubkey, lamports: u64) -> Instruction {
+    let account_metas = vec![
+        AccountMeta::new(*from_pubkey, true),
+        AccountMeta::new(*to_pubkey, false),
+    ];
+    Instruction::new_with_bincode(
+        system_program::id(),
+        &SystemInstruction::Mint { lamports } ,
+        account_metas,
+    )
+}
+
 pub fn transfer_with_seed(
     from_pubkey: &Pubkey, // must match create_with_seed(base, seed, owner)
     from_base: &Pubkey,

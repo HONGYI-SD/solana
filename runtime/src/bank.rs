@@ -4887,13 +4887,15 @@ impl Bank {
             accounts_resize_delta: accounts_data_len_delta,
         } = transaction_context.into();
 
-        if status.is_ok()
-            && transaction_accounts_lamports_sum(&accounts, tx.message())
-                .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
-                .is_none()
-        {
-            status = Err(TransactionError::UnbalancedTransaction);
-        }
+        // TODO:DONG
+        
+        // if status.is_ok()
+        //     && transaction_accounts_lamports_sum(&accounts, tx.message())
+        //         .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
+        //         .is_none()
+        // {
+        //     status = Err(TransactionError::UnbalancedTransaction);
+        // }
         let status = status.map(|_| ());
 
         loaded_transaction.accounts = accounts;

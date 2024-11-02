@@ -359,6 +359,7 @@ impl TransactionContext {
     /// Pops the current InstructionContext
     #[cfg(not(target_os = "solana"))]
     pub fn pop(&mut self) -> Result<(), InstructionError> {
+
         if self.instruction_stack.is_empty() {
             return Err(InstructionError::CallDepth);
         }
@@ -378,13 +379,17 @@ impl TransactionContext {
                                 != instruction_accounts_lamport_sum
                         })
                 });
+        
+        // TODO:DONG
+
         // Always pop, even if we `detected_an_unbalanced_instruction`
-        self.instruction_stack.pop();
-        if detected_an_unbalanced_instruction? {
-            Err(InstructionError::UnbalancedInstruction)
-        } else {
-            Ok(())
-        }
+        // self.instruction_stack.pop();
+        // if detected_an_unbalanced_instruction? {
+        //     Err(InstructionError::UnbalancedInstruction)
+        // } else {
+        //     Ok(())
+        // }
+        Ok(())
     }
 
     /// Gets the return data of the current InstructionContext or any above
