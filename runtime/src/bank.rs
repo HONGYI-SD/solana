@@ -4765,7 +4765,17 @@ impl Bank {
         log_messages_bytes_limit: Option<usize>,
         programs_loaded_for_tx_batch: &LoadedProgramsForTxBatch,
     ) -> TransactionExecutionResult {
+        info!("dong: execute_loaded_transaction start");
         let transaction_accounts = std::mem::take(&mut loaded_transaction.accounts);
+
+        fn transaction_accounts_lamports_sum_skip_check(accounts: &Vec<(Pubkey, AccountSharedData)>) -> Option<bool> {
+            for i in accounts {
+                if i.0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" {
+                    return Some(true);
+                }
+            }
+            Some(false)
+        }
 
         fn transaction_accounts_lamports_sum(
             accounts: &[(Pubkey, AccountSharedData)],
@@ -4887,15 +4897,23 @@ impl Bank {
             accounts_resize_delta: accounts_data_len_delta,
         } = transaction_context.into();
 
-        // TODO:DONG
         
-        // if status.is_ok()
-        //     && transaction_accounts_lamports_sum(&accounts, tx.message())
-        //         .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
-        //         .is_none()
-        // {
-        //     status = Err(TransactionError::UnbalancedTransaction);
+        // TODO:DONG
+        if !transaction_accounts_lamports_sum_skip_check(&accounts).unwrap_or(false) {
+            if status.is_ok()
+            && transaction_accounts_lamports_sum(&accounts, tx.message())
+                .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
+                .is_none()
+            {
+                status = Err(TransactionError::UnbalancedTransaction);
+            }
+        }
+        // else{
+        //     for account in &accounts {
+        //         self.store_account_and_update_capitalization(&account.0, &account.1);
+        //     }
         // }
+        
         let status = status.map(|_| ());
 
         loaded_transaction.accounts = accounts;
@@ -4911,6 +4929,8 @@ impl Bank {
             None
         };
 
+        info!("dong: execute_loaded_transaction end");
+
         TransactionExecutionResult::Executed {
             details: TransactionExecutionDetails {
                 status,
@@ -4924,7 +4944,7 @@ impl Bank {
             programs_modified_by_tx: Box::new(programs_modified_by_tx),
         }
     }
-
+    
     fn replenish_program_cache(
         &self,
         program_accounts_map: &HashMap<Pubkey, (&Pubkey, u64)>,

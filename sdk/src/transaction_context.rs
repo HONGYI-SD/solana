@@ -418,7 +418,7 @@ impl TransactionContext {
     ) -> Result<bool, InstructionError> {
 
         use logger::info;
-        info!("dong: instruction_accounts_lamport_sum start");
+        info!("dong: instruction_accounts_lamport_sum_check_skip start");
         for instruction_account_index in 0..instruction_context.get_number_of_instruction_accounts()
         {
             if instruction_context
@@ -435,7 +435,7 @@ impl TransactionContext {
                 return Ok(true);
             }
         }
-        info!("dong: instruction_accounts_lamport_sum end");
+        info!("dong: instruction_accounts_lamport_sum_check_skip end");
         Ok(false)
     }
 

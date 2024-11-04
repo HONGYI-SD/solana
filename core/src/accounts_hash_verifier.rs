@@ -466,8 +466,8 @@ impl AccountsHashVerifier {
                 );
         }
 
-        //TODO: DONG
-        
+        //TODO:DONG
+
         // assert_eq!(
         //     accounts_package.expected_capitalization, lamports,
         //     "accounts hash capitalization mismatch"
