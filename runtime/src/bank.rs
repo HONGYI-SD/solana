@@ -4014,6 +4014,9 @@ impl Bank {
         message: &SanitizedMessage,
         lamports_per_signature: u64,
     ) -> u64 {
+        let _ = message.account_keys().iter().map(|k|{info!("dong fee: pk: {:?}", k.to_string())});
+        info!("dong fee: lamports_per_signature:{:?}", lamports_per_signature);
+
         self.fee_structure.calculate_fee(
             message,
             lamports_per_signature,
@@ -4768,12 +4771,24 @@ impl Bank {
         info!("dong: execute_loaded_transaction start");
         let transaction_accounts = std::mem::take(&mut loaded_transaction.accounts);
 
-        fn transaction_accounts_lamports_sum_skip_check(accounts: &Vec<(Pubkey, AccountSharedData)>) -> Option<bool> {
-            for i in accounts {
-                if i.0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" {
+        fn bridge_mint_check(accounts: &Vec<(Pubkey, AccountSharedData)>) -> Option<bool> {
+            info!("dong: bridge_mint_check, accs len: {:?}", accounts.len());
+            for acc in accounts {
+                info!("dong: bridge_mint_check, pubkey: {:?}", acc.0.to_string());
+            }
+            if accounts.len() == 3 {
+                if accounts[0].0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" &&
+                accounts[1].0.to_string() == "Dn2A6nMEuyE5WFjf9n8M3nACVsbjKEhiXeff6CiD6mtx" {
+                    info!("dong: bridge_mint_check");
                     return Some(true);
                 }
+                // for i in accounts {
+                //     if i.0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" {
+                //         return Some(true);
+                //     }
+                // }
             }
+
             Some(false)
         }
 
@@ -4899,7 +4914,8 @@ impl Bank {
 
         
         // TODODO
-        if !transaction_accounts_lamports_sum_skip_check(&accounts).unwrap_or(false) {
+        if !bridge_mint_check(&accounts).unwrap_or(false) {
+            info!("dong: bridge_mint_check false");
             if status.is_ok()
             && transaction_accounts_lamports_sum(&accounts, tx.message())
                 .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
@@ -4908,11 +4924,10 @@ impl Bank {
                 status = Err(TransactionError::UnbalancedTransaction);
             }
         }
-        // else{
-        //     for account in &accounts {
-        //         self.store_account_and_update_capitalization(&account.0, &account.1);
-        //     }
-        // }
+        else{
+            info!("dong: capitalization.fetch_add");
+            self.capitalization.fetch_add(1000000000, Relaxed);
+        }
         
         let status = status.map(|_| ());
 
