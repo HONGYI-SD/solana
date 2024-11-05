@@ -4771,26 +4771,31 @@ impl Bank {
         info!("dong: execute_loaded_transaction start");
         let transaction_accounts = std::mem::take(&mut loaded_transaction.accounts);
 
-        fn bridge_mint_check(accounts: &Vec<(Pubkey, AccountSharedData)>) -> Option<bool> {
-            info!("dong: bridge_mint_check, accs len: {:?}", accounts.len());
-            for acc in accounts {
-                info!("dong: bridge_mint_check, pubkey: {:?}", acc.0.to_string());
-            }
-            if accounts.len() == 3 {
-                if accounts[0].0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" &&
-                accounts[1].0.to_string() == "Dn2A6nMEuyE5WFjf9n8M3nACVsbjKEhiXeff6CiD6mtx" {
-                    info!("dong: bridge_mint_check");
-                    return Some(true);
-                }
-                // for i in accounts {
-                //     if i.0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" {
-                //         return Some(true);
-                //     }
-                // }
-            }
+        // fn bridge_mint_check(message: &SanitizedMessage, accounts: &Vec<(Pubkey, AccountSharedData)>) -> Option<bool> {
+        //     if let  Some(mint_lamports) = MessageProcessor::bridge_mint_check(message){
 
-            Some(false)
-        }
+        //     }else{
+        //         // not mint 
+        //     }
+        //     info!("dong: bridge_mint_check, accs len: {:?}", accounts.len());
+        //     for acc in accounts {
+        //         info!("dong: bridge_mint_check, pubkey: {:?}", acc.0.to_string());
+        //     }
+        //     if accounts.len() == 3 {
+        //         if accounts[0].0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" &&
+        //         accounts[1].0.to_string() == "Dn2A6nMEuyE5WFjf9n8M3nACVsbjKEhiXeff6CiD6mtx" {
+        //             info!("dong: bridge_mint_check");
+        //             return Some(true);
+        //         }
+        //         // for i in accounts {
+        //         //     if i.0.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9" {
+        //         //         return Some(true);
+        //         //     }
+        //         // }
+        //     }
+
+        //     Some(false)
+        // }
 
         fn transaction_accounts_lamports_sum(
             accounts: &[(Pubkey, AccountSharedData)],
@@ -4912,10 +4917,14 @@ impl Bank {
             accounts_resize_delta: accounts_data_len_delta,
         } = transaction_context.into();
 
-        
+       
+
         // TODODO
-        if !bridge_mint_check(&accounts).unwrap_or(false) {
-            info!("dong: bridge_mint_check false");
+        if let Some(mint_lamports) = MessageProcessor::bridge_mint_check(tx.message()) {
+            info!("dong: capitalization.fetch_add: {:?}", mint_lamports);
+            self.capitalization.fetch_add(mint_lamports, Relaxed);
+        }else{
+            info!("dong: not mint tx");
             if status.is_ok()
             && transaction_accounts_lamports_sum(&accounts, tx.message())
                 .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
@@ -4923,10 +4932,6 @@ impl Bank {
             {
                 status = Err(TransactionError::UnbalancedTransaction);
             }
-        }
-        else{
-            info!("dong: capitalization.fetch_add");
-            self.capitalization.fetch_add(1000000000, Relaxed);
         }
         
         let status = status.map(|_| ());

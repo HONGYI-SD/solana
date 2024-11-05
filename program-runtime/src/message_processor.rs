@@ -6,21 +6,9 @@ use {
         log_collector::LogCollector,
         sysvar_cache::SysvarCache,
         timings::{ExecuteDetailsTimings, ExecuteTimings},
-    },
-    serde::{Deserialize, Serialize},
-    solana_measure::measure::Measure,
-    solana_sdk::{
-        account::WritableAccount,
-        feature_set::FeatureSet,
-        hash::Hash,
-        message::SanitizedMessage,
-        precompiles::is_precompile,
-        saturating_add_assign,
-        sysvar::instructions,
-        transaction::TransactionError,
-        transaction_context::{IndexOfAccount, InstructionAccount, TransactionContext},
-    },
-    std::{cell::RefCell, rc::Rc, sync::Arc},
+    }, log::info, serde::{Deserialize, Serialize}, solana_measure::measure::Measure, solana_sdk::{
+        account::WritableAccount, feature_set::FeatureSet, hash::Hash, message::SanitizedMessage, precompiles::is_precompile, program_utils::limited_deserialize, saturating_add_assign, system_instruction::SystemInstruction, sysvar::instructions, transaction::TransactionError, transaction_context::{IndexOfAccount, InstructionAccount, TransactionContext}
+    }, std::{cell::RefCell, rc::Rc, sync::Arc}
 };
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
@@ -166,6 +154,24 @@ impl MessageProcessor {
                 .map_err(|err| TransactionError::InstructionError(instruction_index as u8, err))?;
         }
         Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn bridge_mint_check(
+        message: &SanitizedMessage,
+    ) -> Option<u64> {
+        for (_pubkey, compiled_ix) in message.program_instructions_iter(){
+            let instruction = limited_deserialize::<SystemInstruction>(&compiled_ix.data);
+            match instruction {
+                Ok(SystemInstruction::Mint { 
+                    lamports,
+                 }) => {
+                    return Some(lamports);
+                 }
+                 _ => {}
+            }
+        }
+        None
     }
 }
 
