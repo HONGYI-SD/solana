@@ -37,6 +37,7 @@
 use solana_accounts_db::accounts_db::{
     ACCOUNTS_DB_CONFIG_FOR_BENCHMARKS, ACCOUNTS_DB_CONFIG_FOR_TESTING,
 };
+use solana_program_runtime::message_processor::MessageProcessor;
 #[allow(deprecated)]
 use solana_sdk::recent_blockhashes_account;
 pub use solana_sdk::reward_type::RewardType;
@@ -4592,7 +4593,7 @@ impl Bank {
         let sanitized_txs = batch.sanitized_transactions();
         debug!("processing transactions: {}", sanitized_txs.len());
         let mut error_counters = TransactionErrorMetrics::default();
-
+        
         let retryable_transaction_indexes: Vec<_> = batch
             .lock_results()
             .iter()
@@ -4678,6 +4679,7 @@ impl Bank {
 
             let is_vote = tx.is_simple_vote_transaction();
 
+            
             if execution_result.was_executed() // Skip log collection for unprocessed transactions
                 && transaction_log_collector_config.filter != TransactionLogCollectorFilter::None
             {
@@ -4757,6 +4759,17 @@ impl Bank {
                     *err_count += 1;
                 }
             }
+
+            // TODODO
+            if execution_result.was_executed_successfully() {
+                if let Some(mint_lamports) = MessageProcessor::bridge_mint_check(tx.message()) {
+                    info!("dong: mint tx, {:?}", mint_lamports);
+                    self.capitalization.fetch_add(mint_lamports, Relaxed);
+                }
+            }else{
+                info!("dong: tx execute result: {:?}", tx.signature().to_string());
+            }
+            
         }
         collect_logs_time.stop();
         timings

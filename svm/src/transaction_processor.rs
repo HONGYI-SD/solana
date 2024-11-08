@@ -10,7 +10,7 @@ use {
             DurableNonceFee, TransactionExecutionDetails, TransactionExecutionResult,
         },
     },
-    log::debug,
+    log::{debug, info},
     percentage::Percentage,
     solana_measure::measure::Measure,
     solana_program_runtime::{
@@ -703,13 +703,20 @@ impl<FG: ForkGraph> TransactionBatchProcessor<FG> {
             accounts_resize_delta: accounts_data_len_delta,
         } = transaction_context.into();
 
-        if status.is_ok()
+        //TODODO
+        // skip mint tx balance check
+        if let Some(_) = MessageProcessor::bridge_mint_check(tx.message()) {
+            info!("dong: mint tx will not check balance");
+        }else {
+            if status.is_ok()
             && transaction_accounts_lamports_sum(&accounts, tx.message())
                 .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
                 .is_none()
-        {
-            status = Err(TransactionError::UnbalancedTransaction);
+            {
+                status = Err(TransactionError::UnbalancedTransaction);
+            }
         }
+        
         let status = status.map(|_| ());
 
         loaded_transaction.accounts = accounts;
