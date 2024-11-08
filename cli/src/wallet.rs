@@ -930,7 +930,7 @@ pub fn process_transfer(
             .with_memo(memo)
             .with_compute_unit_price(compute_unit_price)
         } else {
-            vec![system_instruction::mint(&from_pubkey, to, lamports)]
+            vec![system_instruction::burn(&from_pubkey, to, lamports)]
                 .with_memo(memo)
                 .with_compute_unit_price(compute_unit_price)
         };

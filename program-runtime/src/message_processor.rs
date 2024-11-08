@@ -15,6 +15,16 @@ use {
     std::{cell::RefCell, rc::Rc, sync::Arc},
 };
 
+pub enum BridgeMsg {
+    Mint{
+        lamports: u64,
+    },
+
+    Burn{
+        lamports: u64,
+    },
+}
+
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct MessageProcessor {}
 
@@ -163,15 +173,20 @@ impl MessageProcessor {
     #[allow(clippy::too_many_arguments)]
     pub fn bridge_mint_check(
         message: &SanitizedMessage,
-    ) -> Option<u64> {
+    ) -> Option<BridgeMsg> {
         for (_pubkey, compiled_ix) in message.program_instructions_iter(){
             let instruction = limited_deserialize::<SystemInstruction>(&compiled_ix.data);
             match instruction {
                 Ok(SystemInstruction::Mint { 
                     lamports,
                  }) => {
-                    return Some(lamports);
+                    return Some(BridgeMsg::Mint { lamports });
                  }
+                Ok(SystemInstruction::Burn { 
+                    lamports 
+                }) => {
+                    return Some(BridgeMsg::Burn { lamports });
+                }
                  _ => {}
             }
         }

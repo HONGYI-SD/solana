@@ -37,7 +37,7 @@
 use solana_accounts_db::accounts_db::{
     ACCOUNTS_DB_CONFIG_FOR_BENCHMARKS, ACCOUNTS_DB_CONFIG_FOR_TESTING,
 };
-use solana_program_runtime::message_processor::MessageProcessor;
+use solana_program_runtime::message_processor::{BridgeMsg, MessageProcessor};
 #[allow(deprecated)]
 use solana_sdk::recent_blockhashes_account;
 pub use solana_sdk::reward_type::RewardType;
@@ -4762,9 +4762,18 @@ impl Bank {
 
             // TODODO
             if execution_result.was_executed_successfully() {
-                if let Some(mint_lamports) = MessageProcessor::bridge_mint_check(tx.message()) {
-                    info!("dong: mint tx, {:?}", mint_lamports);
-                    self.capitalization.fetch_add(mint_lamports, Relaxed);
+                match MessageProcessor::bridge_mint_check(tx.message()) {
+                    Some(BridgeMsg::Mint { lamports }) => {
+                        info!("dong: mint tx, {:?}", lamports);
+                        self.capitalization.fetch_add(lamports, Relaxed);
+                    }
+                    Some(BridgeMsg::Burn { lamports }) => {
+                        info!("dong: burn tx, {:?}", lamports);
+                        self.capitalization.fetch_sub(lamports, Relaxed);
+                    }
+                    None => { 
+                        // not bridge tx, do nothing
+                    }
                 }
             }else{
                 info!("dong: tx execute result: {:?}", tx.signature().to_string());

@@ -143,6 +143,13 @@ pub enum SystemInstruction {
     ///   1. `[WRITE]` Recipient account
     Mint { lamports: u64},
 
+    /// Burn lamports
+    ///
+    /// # Account references
+    ///   0. `[WRITE, SIGNER]` Funding account
+    ///   1. `[WRITE]` Recipient account
+    Burn { lamports: u64},
+
     /// Create a new account at an address derived from a base pubkey and a seed
     ///
     /// # Account references
@@ -905,6 +912,18 @@ pub fn mint(from_pubkey: &Pubkey, to_pubkey: &Pubkey, lamports: u64) -> Instruct
     Instruction::new_with_bincode(
         system_program::id(),
         &SystemInstruction::Mint { lamports } ,
+        account_metas,
+    )
+}
+
+pub fn burn(from_pubkey: &Pubkey, to_pubkey: &Pubkey, lamports: u64) -> Instruction {
+    let account_metas = vec![
+        AccountMeta::new(*from_pubkey, true),
+        AccountMeta::new(*to_pubkey, false),
+    ];
+    Instruction::new_with_bincode(
+        system_program::id(),
+        &SystemInstruction::Burn { lamports } ,
         account_metas,
     )
 }

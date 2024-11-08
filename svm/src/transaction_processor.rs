@@ -706,7 +706,7 @@ impl<FG: ForkGraph> TransactionBatchProcessor<FG> {
         //TODODO
         // skip mint tx balance check
         if let Some(_) = MessageProcessor::bridge_mint_check(tx.message()) {
-            info!("dong: mint tx will not check balance");
+            info!("dong: bridge tx will not check balance");
         }else {
             if status.is_ok()
             && transaction_accounts_lamports_sum(&accounts, tx.message())
