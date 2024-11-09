@@ -321,6 +321,134 @@ impl WalletSubCommands for App<'_, '_> {
                 .arg(compute_unit_price_arg()),
         )
         .subcommand(
+            SubCommand::with_name("mint")
+                .about("Bridge program mint funds on sol-layer2 chain")
+                .alias("pay")
+                .arg(pubkey!(
+                    Arg::with_name("to")
+                        .index(1)
+                        .value_name("RECIPIENT_ADDRESS")
+                        .required(true),
+                    "Account of recipient."
+                ))
+                .arg(
+                    Arg::with_name("amount")
+                        .index(2)
+                        .value_name("AMOUNT")
+                        .takes_value(true)
+                        .validator(is_amount_or_all)
+                        .required(true)
+                        .help("The amount to mint, in SOL; accepts keyword ALL"),
+                )
+                .arg(pubkey!(
+                    Arg::with_name("from")
+                        .long("from")
+                        .value_name("FROM_ADDRESS"),
+                    "Bridge program account [default: cli config keypair]."
+                ))
+                .arg(
+                    Arg::with_name("no_wait")
+                        .long("no-wait")
+                        .takes_value(false)
+                        .help(
+                            "Return signature immediately after submitting the transaction, \
+                             instead of waiting for confirmations",
+                        ),
+                )
+                .arg(
+                    Arg::with_name("derived_address_seed")
+                        .long("derived-address-seed")
+                        .takes_value(true)
+                        .value_name("SEED_STRING")
+                        .requires("derived_address_program_id")
+                        .validator(is_derived_address_seed)
+                        .hidden(hidden_unless_forced()),
+                )
+                .arg(
+                    Arg::with_name("derived_address_program_id")
+                        .long("derived-address-program-id")
+                        .takes_value(true)
+                        .value_name("PROGRAM_ID")
+                        .requires("derived_address_seed")
+                        .hidden(hidden_unless_forced()),
+                )
+                .arg(
+                    Arg::with_name("allow_unfunded_recipient")
+                        .long("allow-unfunded-recipient")
+                        .takes_value(false)
+                        .help("Complete the transfer even if the recipient address is not funded"),
+                )
+                .offline_args()
+                .nonce_args(false)
+                .arg(memo_arg())
+                .arg(fee_payer_arg())
+                .arg(compute_unit_price_arg()),
+        )
+        .subcommand(
+            SubCommand::with_name("burn")
+                .about("Bridge program burn a account's funds on sol-layer2 chain")
+                .alias("pay")
+                .arg(pubkey!(
+                    Arg::with_name("to")
+                        .index(1)
+                        .value_name("RECIPIENT_ADDRESS")
+                        .required(true),
+                    "Account of burn."
+                ))
+                .arg(
+                    Arg::with_name("amount")
+                        .index(2)
+                        .value_name("AMOUNT")
+                        .takes_value(true)
+                        .validator(is_amount_or_all)
+                        .required(true)
+                        .help("The amount to burn, in SOL; accepts keyword ALL"),
+                )
+                .arg(pubkey!(
+                    Arg::with_name("from")
+                        .long("from")
+                        .value_name("FROM_ADDRESS"),
+                    "Bridge program account [default: cli config keypair]."
+                ))
+                .arg(
+                    Arg::with_name("no_wait")
+                        .long("no-wait")
+                        .takes_value(false)
+                        .help(
+                            "Return signature immediately after submitting the transaction, \
+                             instead of waiting for confirmations",
+                        ),
+                )
+                .arg(
+                    Arg::with_name("derived_address_seed")
+                        .long("derived-address-seed")
+                        .takes_value(true)
+                        .value_name("SEED_STRING")
+                        .requires("derived_address_program_id")
+                        .validator(is_derived_address_seed)
+                        .hidden(hidden_unless_forced()),
+                )
+                .arg(
+                    Arg::with_name("derived_address_program_id")
+                        .long("derived-address-program-id")
+                        .takes_value(true)
+                        .value_name("PROGRAM_ID")
+                        .requires("derived_address_seed")
+                        .hidden(hidden_unless_forced()),
+                )
+                .arg(
+                    Arg::with_name("allow_unfunded_recipient")
+                        .long("allow-unfunded-recipient")
+                        .takes_value(false)
+                        .help("Complete the transfer even if the recipient address is not funded"),
+                )
+                .offline_args()
+                .nonce_args(false)
+                .arg(memo_arg())
+                .arg(fee_payer_arg())
+                .arg(compute_unit_price_arg()),
+        )
+        .subcommand(
             SubCommand::with_name("sign-offchain-message")
                 .about("Sign off-chain message")
                 .arg(
@@ -584,6 +712,118 @@ pub fn parse_transfer(
 
     Ok(CliCommandInfo {
         command: CliCommand::Transfer {
+            amount,
+            to,
+            sign_only,
+            dump_transaction_message,
+            allow_unfunded_recipient,
+            no_wait,
+            blockhash_query,
+            nonce_account,
+            nonce_authority: signer_info.index_of(nonce_authority_pubkey).unwrap(),
+            memo,
+            fee_payer: signer_info.index_of(fee_payer_pubkey).unwrap(),
+            from: signer_info.index_of(from_pubkey).unwrap(),
+            derived_address_seed,
+            derived_address_program_id,
+            compute_unit_price,
+        },
+        signers: signer_info.signers,
+    })
+}
+
+pub fn parse_mint(
+    matches: &ArgMatches<'_>,
+    default_signer: &DefaultSigner,
+    wallet_manager: &mut Option<Rc<RemoteWalletManager>>,
+) -> Result<CliCommandInfo, CliError> {
+    let amount = SpendAmount::new_from_matches(matches, "amount");
+    let to = pubkey_of_signer(matches, "to", wallet_manager)?.unwrap();
+    let sign_only = matches.is_present(SIGN_ONLY_ARG.name);
+    let dump_transaction_message = matches.is_present(DUMP_TRANSACTION_MESSAGE.name);
+    let no_wait = matches.is_present("no_wait");
+    let blockhash_query = BlockhashQuery::new_from_matches(matches);
+    let nonce_account = pubkey_of_signer(matches, NONCE_ARG.name, wallet_manager)?;
+    let (nonce_authority, nonce_authority_pubkey) =
+        signer_of(matches, NONCE_AUTHORITY_ARG.name, wallet_manager)?;
+    let memo = matches.value_of(MEMO_ARG.name).map(String::from);
+    let (fee_payer, fee_payer_pubkey) = signer_of(matches, FEE_PAYER_ARG.name, wallet_manager)?;
+    let (from, from_pubkey) = signer_of(matches, "from", wallet_manager)?;
+    let allow_unfunded_recipient = matches.is_present("allow_unfunded_recipient");
+
+    let mut bulk_signers = vec![fee_payer, from];
+    if nonce_account.is_some() {
+        bulk_signers.push(nonce_authority);
+    }
+
+    let signer_info =
+        default_signer.generate_unique_signers(bulk_signers, matches, wallet_manager)?;
+    let compute_unit_price = value_of(matches, COMPUTE_UNIT_PRICE_ARG.name);
+
+    let derived_address_seed = matches
+        .value_of("derived_address_seed")
+        .map(|s| s.to_string());
+    let derived_address_program_id =
+        resolve_derived_address_program_id(matches, "derived_address_program_id");
+
+    Ok(CliCommandInfo {
+        command: CliCommand::Mint {
+            amount,
+            to,
+            sign_only,
+            dump_transaction_message,
+            allow_unfunded_recipient,
+            no_wait,
+            blockhash_query,
+            nonce_account,
+            nonce_authority: signer_info.index_of(nonce_authority_pubkey).unwrap(),
+            memo,
+            fee_payer: signer_info.index_of(fee_payer_pubkey).unwrap(),
+            from: signer_info.index_of(from_pubkey).unwrap(),
+            derived_address_seed,
+            derived_address_program_id,
+            compute_unit_price,
+        },
+        signers: signer_info.signers,
+    })
+}
+
+pub fn parse_burn(
+    matches: &ArgMatches<'_>,
+    default_signer: &DefaultSigner,
+    wallet_manager: &mut Option<Rc<RemoteWalletManager>>,
+) -> Result<CliCommandInfo, CliError> {
+    let amount = SpendAmount::new_from_matches(matches, "amount");
+    let to = pubkey_of_signer(matches, "to", wallet_manager)?.unwrap();
+    let sign_only = matches.is_present(SIGN_ONLY_ARG.name);
+    let dump_transaction_message = matches.is_present(DUMP_TRANSACTION_MESSAGE.name);
+    let no_wait = matches.is_present("no_wait");
+    let blockhash_query = BlockhashQuery::new_from_matches(matches);
+    let nonce_account = pubkey_of_signer(matches, NONCE_ARG.name, wallet_manager)?;
+    let (nonce_authority, nonce_authority_pubkey) =
+        signer_of(matches, NONCE_AUTHORITY_ARG.name, wallet_manager)?;
+    let memo = matches.value_of(MEMO_ARG.name).map(String::from);
+    let (fee_payer, fee_payer_pubkey) = signer_of(matches, FEE_PAYER_ARG.name, wallet_manager)?;
+    let (from, from_pubkey) = signer_of(matches, "from", wallet_manager)?;
+    let allow_unfunded_recipient = matches.is_present("allow_unfunded_recipient");
+
+    let mut bulk_signers = vec![fee_payer, from];
+    if nonce_account.is_some() {
+        bulk_signers.push(nonce_authority);
+    }
+
+    let signer_info =
+        default_signer.generate_unique_signers(bulk_signers, matches, wallet_manager)?;
+    let compute_unit_price = value_of(matches, COMPUTE_UNIT_PRICE_ARG.name);
+
+    let derived_address_seed = matches
+        .value_of("derived_address_seed")
+        .map(|s| s.to_string());
+    let derived_address_program_id =
+        resolve_derived_address_program_id(matches, "derived_address_program_id");
+
+    Ok(CliCommandInfo {
+        command: CliCommand::Burn {
             amount,
             to,
             sign_only,
@@ -916,7 +1156,6 @@ pub fn process_transfer(
     } else {
         None
     };
-
     let build_message = |lamports| {
         let ixs = if let Some((base_pubkey, seed, program_id, from_pubkey)) = with_seed.as_ref() {
             vec![system_instruction::transfer_with_seed(
@@ -930,10 +1169,257 @@ pub fn process_transfer(
             .with_memo(memo)
             .with_compute_unit_price(compute_unit_price)
         } else {
-            vec![system_instruction::burn(&from_pubkey, to, lamports)]
+            vec![system_instruction::transfer(&from_pubkey, to, lamports)]
                 .with_memo(memo)
                 .with_compute_unit_price(compute_unit_price)
         };
+
+        if let Some(nonce_account) = &nonce_account {
+            Message::new_with_nonce(
+                ixs,
+                Some(&fee_payer.pubkey()),
+                nonce_account,
+                &nonce_authority.pubkey(),
+            )
+        } else {
+            Message::new(&ixs, Some(&fee_payer.pubkey()))
+        }
+    };
+
+    let (message, _) = resolve_spend_tx_and_check_account_balances(
+        rpc_client,
+        sign_only,
+        amount,
+        &recent_blockhash,
+        &from_pubkey,
+        &fee_payer.pubkey(),
+        build_message,
+        config.commitment,
+    )?;
+    let mut tx = Transaction::new_unsigned(message);
+
+    if sign_only {
+        tx.try_partial_sign(&config.signers, recent_blockhash)?;
+        return_signers_with_config(
+            &tx,
+            &config.output_format,
+            &ReturnSignersConfig {
+                dump_transaction_message,
+            },
+        )
+    } else {
+        if let Some(nonce_account) = &nonce_account {
+            let nonce_account = solana_rpc_client_nonce_utils::get_account_with_commitment(
+                rpc_client,
+                nonce_account,
+                config.commitment,
+            )?;
+            check_nonce_account(&nonce_account, &nonce_authority.pubkey(), &recent_blockhash)?;
+        }
+
+        tx.try_sign(&config.signers, recent_blockhash)?;
+        let result = if no_wait {
+            rpc_client.send_transaction(&tx)
+        } else {
+            rpc_client.send_and_confirm_transaction_with_spinner(&tx)
+        };
+        log_instruction_custom_error::<SystemError>(result, config)
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn process_mint(
+    rpc_client: &RpcClient,
+    config: &CliConfig,
+    amount: SpendAmount,
+    to: &Pubkey,
+    from: SignerIndex,
+    sign_only: bool,
+    dump_transaction_message: bool,
+    allow_unfunded_recipient: bool,
+    no_wait: bool,
+    blockhash_query: &BlockhashQuery,
+    nonce_account: Option<&Pubkey>,
+    nonce_authority: SignerIndex,
+    memo: Option<&String>,
+    fee_payer: SignerIndex,
+    derived_address_seed: Option<String>,
+    derived_address_program_id: Option<&Pubkey>,
+    compute_unit_price: Option<&u64>,
+) -> ProcessResult {
+    let from = config.signers[from];
+    let mut from_pubkey = from.pubkey();
+
+    let recent_blockhash = blockhash_query.get_blockhash(rpc_client, config.commitment)?;
+
+    if !sign_only && !allow_unfunded_recipient {
+        let recipient_balance = rpc_client
+            .get_balance_with_commitment(to, config.commitment)?
+            .value;
+        if recipient_balance == 0 {
+            return Err(format!(
+                "The recipient address ({to}) is not funded. Add `--allow-unfunded-recipient` to \
+                 complete the transfer "
+            )
+            .into());
+        }
+    }
+
+    let nonce_authority = config.signers[nonce_authority];
+    let fee_payer = config.signers[fee_payer];
+
+    //let derived_parts = derived_address_seed.zip(derived_address_program_id);
+    // let _with_seed = if let Some((seed, program_id)) = derived_parts {
+    //     let base_pubkey = from_pubkey;
+    //     from_pubkey = Pubkey::create_with_seed(&base_pubkey, &seed, program_id)?;
+    //     Some((base_pubkey, seed, program_id, from_pubkey))
+    // } else {
+    //     None
+    // };
+    let build_message = |lamports| {
+        // let ixs = if let Some((base_pubkey, seed, program_id, from_pubkey)) = with_seed.as_ref() {
+        //     vec![system_instruction::transfer_with_seed(
+        //         from_pubkey,
+        //         base_pubkey,
+        //         seed.clone(),
+        //         program_id,
+        //         to,
+        //         lamports,
+        //     )]
+        //     .with_memo(memo)
+        //     .with_compute_unit_price(compute_unit_price)
+        // } else {
+        //     vec![system_instruction::mint(&from_pubkey, to, lamports)]
+        //         .with_memo(memo)
+        //         .with_compute_unit_price(compute_unit_price)
+        // };
+        let ixs = vec![system_instruction::mint(&from_pubkey, to, lamports)]
+                                    .with_memo(memo)
+                                    .with_compute_unit_price(compute_unit_price);
+
+        if let Some(nonce_account) = &nonce_account {
+            Message::new_with_nonce(
+                ixs,
+                Some(&fee_payer.pubkey()),
+                nonce_account,
+                &nonce_authority.pubkey(),
+            )
+        } else {
+            Message::new(&ixs, Some(&fee_payer.pubkey()))
+        }
+    };
+
+    let (message, _) = resolve_spend_tx_and_check_account_balances(
+        rpc_client,
+        sign_only,
+        amount,
+        &recent_blockhash,
+        &from_pubkey,
+        &fee_payer.pubkey(),
+        build_message,
+        config.commitment,
+    )?;
+    let mut tx = Transaction::new_unsigned(message);
+
+    if sign_only {
+        tx.try_partial_sign(&config.signers, recent_blockhash)?;
+        return_signers_with_config(
+            &tx,
+            &config.output_format,
+            &ReturnSignersConfig {
+                dump_transaction_message,
+            },
+        )
+    } else {
+        if let Some(nonce_account) = &nonce_account {
+            let nonce_account = solana_rpc_client_nonce_utils::get_account_with_commitment(
+                rpc_client,
+                nonce_account,
+                config.commitment,
+            )?;
+            check_nonce_account(&nonce_account, &nonce_authority.pubkey(), &recent_blockhash)?;
+        }
+
+        tx.try_sign(&config.signers, recent_blockhash)?;
+        let result = if no_wait {
+            rpc_client.send_transaction(&tx)
+        } else {
+            rpc_client.send_and_confirm_transaction_with_spinner(&tx)
+        };
+        log_instruction_custom_error::<SystemError>(result, config)
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn process_burn(
+    rpc_client: &RpcClient,
+    config: &CliConfig,
+    amount: SpendAmount,
+    to: &Pubkey,
+    from: SignerIndex,
+    sign_only: bool,
+    dump_transaction_message: bool,
+    allow_unfunded_recipient: bool,
+    no_wait: bool,
+    blockhash_query: &BlockhashQuery,
+    nonce_account: Option<&Pubkey>,
+    nonce_authority: SignerIndex,
+    memo: Option<&String>,
+    fee_payer: SignerIndex,
+    derived_address_seed: Option<String>,
+    derived_address_program_id: Option<&Pubkey>,
+    compute_unit_price: Option<&u64>,
+) -> ProcessResult {
+    let from = config.signers[from];
+    let mut from_pubkey = from.pubkey();
+
+    let recent_blockhash = blockhash_query.get_blockhash(rpc_client, config.commitment)?;
+
+    if !sign_only && !allow_unfunded_recipient {
+        let recipient_balance = rpc_client
+            .get_balance_with_commitment(to, config.commitment)?
+            .value;
+        if recipient_balance == 0 {
+            return Err(format!(
+                "The recipient address ({to}) is not funded. Add `--allow-unfunded-recipient` to \
+                 complete the transfer "
+            )
+            .into());
+        }
+    }
+
+    let nonce_authority = config.signers[nonce_authority];
+    let fee_payer = config.signers[fee_payer];
+
+    // let derived_parts = derived_address_seed.zip(derived_address_program_id);
+    // let with_seed = if let Some((seed, program_id)) = derived_parts {
+    //     let base_pubkey = from_pubkey;
+    //     from_pubkey = Pubkey::create_with_seed(&base_pubkey, &seed, program_id)?;
+    //     Some((base_pubkey, seed, program_id, from_pubkey))
+    // } else {
+    //     None
+    // };
+    let build_message = |lamports| {
+        // let ixs = if let Some((base_pubkey, seed, program_id, from_pubkey)) = with_seed.as_ref() {
+        //     vec![system_instruction::transfer_with_seed(
+        //         from_pubkey,
+        //         base_pubkey,
+        //         seed.clone(),
+        //         program_id,
+        //         to,
+        //         lamports,
+        //     )]
+        //     .with_memo(memo)
+        //     .with_compute_unit_price(compute_unit_price)
+        // } else {
+        //     vec![system_instruction::transfer(&from_pubkey, to, lamports)]
+        //         .with_memo(memo)
+        //         .with_compute_unit_price(compute_unit_price)
+        // };
+
+        let ixs = vec![system_instruction::transfer(&from_pubkey, to, lamports)]
+                                        .with_memo(memo)
+                                        .with_compute_unit_price(compute_unit_price);
 
         if let Some(nonce_account) = &nonce_account {
             Message::new_with_nonce(
