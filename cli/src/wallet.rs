@@ -1243,12 +1243,12 @@ pub fn process_mint(
     nonce_authority: SignerIndex,
     memo: Option<&String>,
     fee_payer: SignerIndex,
-    derived_address_seed: Option<String>,
-    derived_address_program_id: Option<&Pubkey>,
+    _derived_address_seed: Option<String>,
+    _derived_address_program_id: Option<&Pubkey>,
     compute_unit_price: Option<&u64>,
 ) -> ProcessResult {
     let from = config.signers[from];
-    let mut from_pubkey = from.pubkey();
+    let from_pubkey = from.pubkey();
 
     let recent_blockhash = blockhash_query.get_blockhash(rpc_client, config.commitment)?;
 
@@ -1366,12 +1366,12 @@ pub fn process_burn(
     nonce_authority: SignerIndex,
     memo: Option<&String>,
     fee_payer: SignerIndex,
-    derived_address_seed: Option<String>,
-    derived_address_program_id: Option<&Pubkey>,
+    _derived_address_seed: Option<String>,
+    _derived_address_program_id: Option<&Pubkey>,
     compute_unit_price: Option<&u64>,
 ) -> ProcessResult {
     let from = config.signers[from];
-    let mut from_pubkey = from.pubkey();
+    let from_pubkey = from.pubkey();
 
     let recent_blockhash = blockhash_query.get_blockhash(rpc_client, config.commitment)?;
 
@@ -1417,7 +1417,7 @@ pub fn process_burn(
         //         .with_compute_unit_price(compute_unit_price)
         // };
 
-        let ixs = vec![system_instruction::transfer(&from_pubkey, to, lamports)]
+        let ixs = vec![system_instruction::burn(&from_pubkey, to, lamports)]
                                         .with_memo(memo)
                                         .with_compute_unit_price(compute_unit_price);
 
