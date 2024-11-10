@@ -414,7 +414,8 @@ impl TransactionContext {
         &self,
         instruction_context: &InstructionContext,
     ) -> Result<bool, InstructionError> {
-
+        use std::env;
+        let bridge_pubkey = env::var("BRIDGE_PUBKEY").unwrap_or("2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9".to_string());
         use logger::info;
         for instruction_account_index in 0..instruction_context.get_number_of_instruction_accounts()
         {
@@ -428,7 +429,7 @@ impl TransactionContext {
                 .get_index_of_instruction_account_in_transaction(instruction_account_index)?;
             let pubkey = self.get_key_of_account_at_index(index_in_transaction)?;
             info!("dong: pubkey {:?}", pubkey.to_string());
-            if pubkey.to_string() == "2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9".to_string()  {
+            if pubkey.to_string() == bridge_pubkey  {
                 return Ok(true);
             }
         }
