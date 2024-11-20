@@ -136,6 +136,8 @@ pub enum SystemInstruction {
     ///   1. `[WRITE]` Recipient account
     Transfer { lamports: u64 },
 
+    Mint { lamports: u64 },
+
     /// Create a new account at an address derived from a base pubkey and a seed
     ///
     /// # Account references
@@ -883,6 +885,18 @@ pub fn transfer(from_pubkey: &Pubkey, to_pubkey: &Pubkey, lamports: u64) -> Inst
     Instruction::new_with_bincode(
         system_program::id(),
         &SystemInstruction::Transfer { lamports },
+        account_metas,
+    )
+}
+
+pub fn mint(from_pubkey: &Pubkey, to_pubkey: &Pubkey, lamports: u64) -> Instruction {
+    let account_metas = vec![
+        AccountMeta::new(*from_pubkey, true),
+        AccountMeta::new(*to_pubkey, false),
+    ];
+    Instruction::new_with_bincode(
+        system_program::id(),
+        &SystemInstruction::Mint { lamports } ,
         account_metas,
     )
 }
