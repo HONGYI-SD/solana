@@ -1,4 +1,4 @@
-export BRIDGE_PUBKEY="2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9"; \
+export BRIDGE_PUBKEY="5mcTqfi6GuriCniRijTdn9bf3nEthXHgteF9jV9aXB6w"; \
 RUST_LOG=TRACE ../target/debug/solana-validator \
 --require-tower \
 --ledger /Users/apple/my-solana-localnet/solana/net/../config/bootstrap-validator \
