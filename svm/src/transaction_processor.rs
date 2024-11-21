@@ -628,6 +628,7 @@ impl<FG: ForkGraph> TransactionBatchProcessor<FG> {
             self.slot,
             programs_loaded_for_tx_batch.environments.clone(),
         );
+
         let mut process_message_time = Measure::start("process_message_time");
         let process_result = MessageProcessor::process_message(
             tx.message(),
@@ -713,6 +714,7 @@ impl<FG: ForkGraph> TransactionBatchProcessor<FG> {
                 .filter(|lamports_after_tx| lamports_before_tx == *lamports_after_tx)
                 .is_none()
             {
+                info!("dong: 1 TransactionError::UnbalancedTransaction");
                 status = Err(TransactionError::UnbalancedTransaction);
             }
         }

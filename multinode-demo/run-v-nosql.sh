@@ -1,4 +1,5 @@
-export BRIDGE_PUBKEY="2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9"; ../target/debug/solana-validator \
+export BRIDGE_PUBKEY="2oewwQzV1ZXm8aAidL2hhQn6texe4ba61KS5MJKa8AJ9"; \
+RUST_LOG=TRACE ../target/debug/solana-validator \
 --require-tower \
 --ledger /Users/apple/my-solana-localnet/solana/net/../config/bootstrap-validator \
 --rpc-bind-address 0.0.0.0 \

@@ -249,6 +249,7 @@ fn mint(
     transaction_context: &TransactionContext,
     instruction_context: &InstructionContext,
 ) -> Result<(), InstructionError> {
+    info!("dong: mint: {}", lamports);
     if !instruction_context.is_instruction_account_signer(from_account_index)? {
         ic_msg!(
             invoke_context,
@@ -364,7 +365,7 @@ declare_process_instruction!(Entrypoint, DEFAULT_COMPUTE_UNITS, |invoke_context|
     let instruction_context = transaction_context.get_current_instruction_context()?;
     let instruction_data = instruction_context.get_instruction_data();
     let instruction = limited_deserialize(instruction_data)?;
-
+    info!("dong: instruction.data 2: {:?}", instruction_data);
     trace!("process_instruction: {:?}", instruction);
 
     let signers = instruction_context.get_signers(transaction_context)?;

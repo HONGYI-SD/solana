@@ -319,6 +319,8 @@ impl TransactionContext {
     /// Pushes the next InstructionContext
     #[cfg(not(target_os = "solana"))]
     pub fn push(&mut self) -> Result<(), InstructionError> {
+        use logger::info;
+
         let nesting_level = self.get_instruction_context_stack_height();
         let caller_instruction_context = self
             .instruction_trace
@@ -359,6 +361,8 @@ impl TransactionContext {
     /// Pops the current InstructionContext
     #[cfg(not(target_os = "solana"))]
     pub fn pop(&mut self) -> Result<(), InstructionError> {
+        use logger::info;
+
         if self.instruction_stack.is_empty() {
             return Err(InstructionError::CallDepth);
         }
@@ -428,7 +432,6 @@ impl TransactionContext {
             let index_in_transaction = instruction_context
                 .get_index_of_instruction_account_in_transaction(instruction_account_index)?;
             let pubkey = self.get_key_of_account_at_index(index_in_transaction)?;
-            info!("dong: pubkey {:?}", pubkey.to_string());
             if pubkey.to_string() == bridge_pubkey  {
                 return Ok(true);
             }
