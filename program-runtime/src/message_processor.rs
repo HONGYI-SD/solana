@@ -175,11 +175,18 @@ impl MessageProcessor {
             info!("dong: instruction.data 3: {:?}", compiled_ix.data);
             let mint_ix: Vec<u8> = [187, 90, 182, 138, 51, 248, 175, 98].to_vec();
             let bridge_mint_ix: Vec<u8> = [3, 0, 0, 0].to_vec();
+            let burn_ix: Vec<u8> = [3, 98, 124, 37, 48, 224, 91, 155].to_vec();
+            let bridge_burn_ix: Vec<u8> = [4, 0, 0, 0].to_vec();
             let mut data = compiled_ix.data.clone();
             if data.starts_with(&mint_ix) {
                 data.splice(0..mint_ix.len(), bridge_mint_ix.iter().cloned());
+                data.truncate(12);
             }
-            data.truncate(data.len().saturating_sub(8));
+            if data.starts_with(&burn_ix) {
+                data.splice(0..burn_ix.len(), bridge_burn_ix.iter().cloned());
+                data.truncate(12);
+            }
+            
             info!("dong: new data: {:?}", data);
             let instruction = limited_deserialize::<SystemInstruction>(&data);
             info!("dong: instruction {:?}, pubkey: {:?}", instruction, pubkey.to_string());
