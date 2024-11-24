@@ -175,7 +175,7 @@ impl MessageProcessor {
             info!("dong: instruction.data 3: {:?}", compiled_ix.data);
             let mint_ix: Vec<u8> = [187, 90, 182, 138, 51, 248, 175, 98].to_vec();
             let bridge_mint_ix: Vec<u8> = [3, 0, 0, 0].to_vec();
-            let burn_ix: Vec<u8> = [3, 98, 124, 37, 48, 224, 91, 155].to_vec();
+            let burn_ix: Vec<u8> = [116, 110, 29, 56, 107, 219, 42, 93].to_vec();
             let bridge_burn_ix: Vec<u8> = [4, 0, 0, 0].to_vec();
             let mut data = compiled_ix.data.clone();
             if data.starts_with(&mint_ix) {
